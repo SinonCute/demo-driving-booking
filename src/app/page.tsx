@@ -60,13 +60,14 @@ const Slots = ({address}: { address: string }) => {
         {data.length != 0 ?
                 <RadioGroup
                     label="Select the slot you want"
-                    size={'large'}
+                    size={'lg'}
                     className="grid place-items-center rounded-lg border-2 border-transparent"
                     orientation={'horizontal'}
                 >
                     {data.map((slot: any) => {
                         return (
                             <Radio
+                                key={slot.instructorName}
                                 value={slot.instructorName}
                                 classNames={{
                                     base: cn(
@@ -165,6 +166,7 @@ const PlacesAutocomplete = ({setSelected} : {setSelected: any}) => {
                         value={value}
                         onChange={handleInput}
                         disabled={!ready}
+                        autoComplete={"off"}
                         placeholder="Search something.."/>
 
                 </div>
