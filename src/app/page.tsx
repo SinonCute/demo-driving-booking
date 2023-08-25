@@ -4,6 +4,8 @@ import useOnclickOutside from "react-cool-onclickoutside";
 import usePlacesAutocomplete, {getGeocode, getLatLng} from "use-places-autocomplete";
 import {useLoadScript} from "@react-google-maps/api";
 import {useEffect, useState} from "react";
+import {Radio, RadioGroup} from "@nextui-org/radio";
+import {cn, Spinner} from "@nextui-org/react";
 
 export default function Home() {
     const {isLoaded} = useLoadScript({
@@ -30,21 +32,65 @@ export default function Home() {
 const Slots = ({address}: { address: string }) => {
 
     const [data, setData] = useState<any>([])
+    const [loading, setLoading] = useState<boolean>(false)
 
     useEffect(() => {
+        setLoading(true)
         if (address === "") {
+            setData([])
+            setLoading(false)
             return
         }
         fetch(`http://localhost:8080/api/slots?address=${address}`)
             .then((res) => res.json())
-            .then((data) => {
-                setData(data)
-            })
+            .then((res) => {
+                setData(res)
+                setLoading(false)
+            });
     }, [address])
+
+    if (loading) return (
+        <div className="grid place-items-center">
+            <Spinner color="default" size={"lg"} />
+        </div>
+    )
 
     return (
         <>
-            {data}
+        {data.length != 0 ?
+                <RadioGroup
+                    label="Select the slot you want"
+                    size={'large'}
+                    className="grid place-items-center rounded-lg border-2 border-transparent"
+                    orientation={'horizontal'}
+                >
+                    {data.map((slot: any) => {
+                        return (
+                            <Radio
+                                value={slot.instructorName}
+                                classNames={{
+                                    base: cn(
+                                        "inline-flex m-0 bg-content1 hover:bg-content2 items-center justify-between",
+                                        "flex-row-reverse max-w-[300px] cursor-pointer rounded-lg gap-4 p-4 border-2 border-transparent",
+                                        "data-[selected=true]:border-primary display-linebreak"
+                                    ),
+                                }}
+                                description={<div style={{whiteSpace: 'pre-line'}}>
+                                    Instructor: {slot.instructorName}
+                                    {'\n'}
+                                    Slot: {slot.slot}
+                                    {'\n'}
+                                    Miles: {slot.miles}
+                                    {'\n'}
+                                    Minutes: {slot.minutes}
+                                </div>}
+                            >
+                                Time: {slot.time}
+                            </Radio>
+                        )
+                    })}
+                </RadioGroup>
+        : <></> }
         </>
     )
 }
