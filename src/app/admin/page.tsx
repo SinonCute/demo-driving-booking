@@ -17,10 +17,13 @@ export default function Admin() {
         libraries: ['places'],
     })
     const [instructorSelected, setInstructorSelected] = useState<any>("")
+    const [slotSelected, setSlotSelected] = useState(null)
+    const [addressSelected, setAddressSelected] = useState(null)
+    const [studentName, setStudentName] = useState("")
 
     const [instructors, setInstructors] = useState<any>([])
     const [data, setData] = useState<any>([])
-    const {isOpen, onOpen, onOpenChange} = useDisclosure();
+    const {isOpen, onOpen, onOpenChange, onClose} = useDisclosure();
 
 
     useEffect(() => {
@@ -36,6 +39,32 @@ export default function Admin() {
             });
 
     }, []);
+
+    const closeHandler = async () => {
+        if (instructorSelected != "" && slotSelected && addressSelected && studentName != "") {
+            console.log(addressSelected)
+            console.log("can make appointment")
+        }
+        const data = {
+            instructor_id: instructorSelected.id,
+            studetn_name: studentName,
+            student_address: addressSelected,
+            slot: Number(slotSelected)
+        }
+        const response = await fetch('http://localhost:8080/api/appointment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        if (response.ok) {
+            console.log('Appointment successfully made.');
+        } else {
+            console.error('Failed to make appointment.');
+        }
+        onClose();
+    }
 
     return (
         <div>
@@ -87,16 +116,18 @@ export default function Admin() {
                                     label="Student Name"
                                     placeholder="Enter student name"
                                     variant="bordered"
+                                    value={studentName}
+                                    onValueChange={setStudentName}
                                 />
                                 <div className="h-full w-full border-2 rounded-lg">
-                                    <MapInputAutocomplete setSelected={() => console.log("selected")} placeholder={"Type the address here"} />
+                                    <MapInputAutocomplete setSelected={setAddressSelected} placeholder={"Type the address here"} />
                                 </div>
                                 <Dropdown>
                                     <DropdownTrigger>
                                         <Button
                                             variant="bordered"
                                         >
-                                            Select instructor
+                                            {instructorSelected === "" ? "Select Instructor" : instructorSelected.name}
                                         </Button>
                                     </DropdownTrigger>
                                     <DropdownMenu aria-label="Dynamic Actions" items={instructors}>
@@ -117,7 +148,7 @@ export default function Admin() {
                                             {...(instructorSelected === "" ? {isDisabled: true} : {})}
                                             variant="bordered"
                                         >
-                                            Select lesson slot
+                                            {slotSelected === null ? "Select lesson slot" : slotSelected}
                                         </Button>
                                     </DropdownTrigger>
                                     <DropdownMenu aria-label="Dynamic Actions" items={instructorSelected.availableSlots}>
@@ -125,6 +156,7 @@ export default function Admin() {
                                             <DropdownItem
                                                 key={item.key}
                                                 color={"default"}
+                                                onPress={() => setSlotSelected(item.key)}
                                             >
                                                 {item.value}
                                             </DropdownItem>
@@ -136,7 +168,7 @@ export default function Admin() {
                                 <Button color="danger" variant="flat" onPress={onClose}>
                                     Close
                                 </Button>
-                                <Button color="primary" onPress={onClose}>
+                                <Button color="primary" onPress={closeHandler}>
                                     Make an appointment
                                 </Button>
                             </ModalFooter>
