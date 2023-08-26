@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Card, CardBody} from "@nextui-org/card";
 import {Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@nextui-org/modal";
 import {DropdownItem, useDisclosure} from "@nextui-org/react";
@@ -10,12 +10,17 @@ import {Button} from "@nextui-org/button";
 import {Dropdown, DropdownMenu, DropdownTrigger} from "@nextui-org/dropdown";
 import MapInputAutocomplete from "@/components/MapInputAutocomplete";
 import {useLoadScript} from "@react-google-maps/api";
+import {Library} from "@googlemaps/js-api-loader";
+
+const libraries: Library[] = ['places']
 
 export default function Admin() {
-    const {isLoaded} = useLoadScript({
+    let libRef = useRef(libraries)
+    const { isLoaded, loadError } = useLoadScript({
         googleMapsApiKey: "AIzaSyCvx13aAFhHhM1TFdyw3YPfGQUARVCl0y4",
-        libraries: ['places'],
-    })
+        libraries: libRef.current,
+    });
+
     const [instructorSelected, setInstructorSelected] = useState<any>("")
     const [slotSelected, setSlotSelected] = useState(null)
     const [addressSelected, setAddressSelected] = useState(null)
@@ -38,39 +43,45 @@ export default function Admin() {
                 setInstructors(res)
             });
 
-    }, []);
+    }, [isOpen, data]);
 
     const closeHandler = async () => {
         if (instructorSelected != "" && slotSelected && addressSelected && studentName != "") {
             console.log(addressSelected)
             console.log("can make appointment")
         }
-        const data = {
-            instructor_id: instructorSelected.id,
-            studetn_name: studentName,
-            student_address: addressSelected,
-            slot: Number(slotSelected)
-        }
-        const response = await fetch('http://localhost:8080/api/appointment', {
+        const urlencoded = new URLSearchParams();
+        urlencoded.append("instructorId", instructorSelected.id);
+        urlencoded.append("slot", slotSelected!);
+        urlencoded.append("studentAddress", addressSelected!);
+        urlencoded.append("studentName", studentName!);
+
+        const request  = await fetch("http://localhost:8080/api/appointment", {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: JSON.stringify(data)
+            body: urlencoded,
         });
-        if (response.ok) {
-            console.log('Appointment successfully made.');
-        } else {
-            console.error('Failed to make appointment.');
-        }
+        setInstructorSelected("")
+        setSlotSelected(null)
+        setAddressSelected(null)
+        setStudentName("")
         onClose();
+    }
+
+    const deleteHandler = async (id: any) => {
+        await fetch(`http://localhost:8080/api/appointment?lessonId=${id}`, {
+            method: 'DELETE',
+        });
+        setData([])
     }
 
     return (
         <div>
             <div className="gap-2 grid grid-cols-2 sm:grid-cols-4 m-12">
                 {data.map((item: any, index: any) => (
-                    <Card shadow="sm" key={index} isPressable onPress={() => console.log("item pressed")}>
+                    <Card shadow="sm" key={index} isPressable onPress={() => deleteHandler(item.id)}>
                         <CardBody className="overflow-hidden p-1 m-5 h-full">
                             <div className="mb-3">
                                 <h5 className="mb-0">Instructor: {item.instructorName}</h5>
